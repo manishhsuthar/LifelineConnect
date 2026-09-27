@@ -1,44 +1,66 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { BloodTypeTag } from "@/components/features/blood-type-tag";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { User, Droplet, MapPin, Phone } from "lucide-react";
-import type { User as DonorUser } from "@/types"; // Assuming User type can represent a donor
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { User } from "@/types";
 
 interface DonorCardProps {
-  donor: DonorUser;
+  donor: User;
+  exactMatch: boolean;
+  canViewContact: boolean;
 }
 
-export function DonorCard({ donor }: DonorCardProps) {
+export function DonorCard({ donor, exactMatch, canViewContact }: DonorCardProps) {
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
-      <CardHeader>
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary/10 rounded-full">
-            <User size={24} className="text-primary" />
-          </div>
-          <CardTitle className="font-headline text-xl text-primary">{donor.name}</CardTitle>
+    <Card className="flex flex-col">
+      <CardHeader className="flex-row items-start justify-between gap-3">
+        <div className="min-w-0">
+          <CardTitle className="truncate">{donor.name}</CardTitle>
+          <CardDescription>{donor.location}</CardDescription>
+          <Badge variant={exactMatch ? "success" : "default"} className="mt-2">
+            {exactMatch ? "Exact match" : "Compatible"}
+          </Badge>
         </div>
+        <BloodTypeTag type={donor.bloodType} />
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center text-sm text-muted-foreground">
-          <Droplet size={16} className="mr-2 text-red-500" />
-          Blood Type: <span className="font-semibold text-foreground ml-1">{donor.bloodType}</span>
-        </div>
-        <div className="flex items-center text-sm text-muted-foreground">
-          <MapPin size={16} className="mr-2 text-green-500" />
-          Location: <span className="font-semibold text-foreground ml-1">{donor.location}</span>
-        </div>
-        {donor.contactNumber && (
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Phone size={16} className="mr-2 text-blue-500" />
-            Contact: <span className="font-semibold text-foreground ml-1">{donor.contactNumber}</span>
+      <CardContent className="mt-auto border-t pt-4">
+        {canViewContact ? (
+          <div className="space-y-3">
+            <dl className="space-y-1 text-sm">
+              {donor.contactNumber && (
+                <div className="flex gap-2">
+                  <dt className="w-12 shrink-0 text-muted-foreground">Phone</dt>
+                  <dd>{donor.contactNumber}</dd>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <dt className="w-12 shrink-0 text-muted-foreground">Email</dt>
+                <dd className="truncate">{donor.email}</dd>
+              </div>
+            </dl>
+            <div className="flex gap-2">
+              {donor.contactNumber && (
+                <Button size="sm" asChild>
+                  <a href={`tel:${donor.contactNumber.replace(/[^\d+]/g, "")}`}>Call</a>
+                </Button>
+              )}
+              <Button size="sm" variant="outline" asChild>
+                <a href={`mailto:${donor.email}?subject=${encodeURIComponent("Blood donation request via Lifeline Connect")}`}>
+                  Email
+                </a>
+              </Button>
+            </div>
           </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            <Link href="/login?next=/search" className="font-medium text-primary hover:underline">
+              Log in
+            </Link>{" "}
+            to see contact details.
+          </p>
         )}
       </CardContent>
-      <CardFooter>
-        <Button variant="outline" className="w-full">
-          Request Contact
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

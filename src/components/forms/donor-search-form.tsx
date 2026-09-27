@@ -13,56 +13,55 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { bloodTypes, type BloodType } from "@/types";
-import { SearchIcon } from "lucide-react";
+import { Select } from "@/components/ui/select";
+import { bloodTypeField } from "@/lib/validation";
+import { bloodTypes } from "@/types";
 
 const formSchema = z.object({
-  bloodType: z.enum(bloodTypes, { required_error: "Blood type is required." }),
-  location: z.string().min(2, "Location is required (e.g., City or Zip Code)."),
+  bloodType: bloodTypeField,
+  location: z.string().trim().max(80, "Location is too long."),
 });
 
+export type DonorSearchValues = z.output<typeof formSchema>;
+
 interface DonorSearchFormProps {
-  onSearch: (values: z.infer<typeof formSchema>) => void;
+  onSearch: (values: DonorSearchValues) => void;
 }
 
 export function DonorSearchForm({ onSearch }: DonorSearchFormProps) {
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<z.input<typeof formSchema>, unknown, DonorSearchValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      bloodType: "",
       location: "",
     },
   });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSearch)} className="p-6 bg-card rounded-lg shadow-lg space-y-6 md:flex md:items-end md:space-y-0 md:space-x-4">
+      <form
+        onSubmit={form.handleSubmit(onSearch)}
+        className="grid gap-4 rounded-lg border bg-surface p-5 md:grid-cols-[1fr_2fr_auto] md:items-start"
+        noValidate
+      >
         <FormField
           control={form.control}
           name="bloodType"
           render={({ field }) => (
-            <FormItem className="flex-1">
-              <FormLabel>Blood Type</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select blood type" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
+            <FormItem>
+              <FormLabel>Blood type needed</FormLabel>
+              <FormControl>
+                <Select {...field}>
+                  <option value="" disabled>
+                    Select
+                  </option>
                   {bloodTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
+                    <option key={type} value={type}>
                       {type}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </Select>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -71,17 +70,17 @@ export function DonorSearchForm({ onSearch }: DonorSearchFormProps) {
           control={form.control}
           name="location"
           render={({ field }) => (
-            <FormItem className="flex-1">
-              <FormLabel>Location (City / Zip Code)</FormLabel>
+            <FormItem>
+              <FormLabel>City or zip code (optional)</FormLabel>
               <FormControl>
-                <Input placeholder="e.g., San Francisco or 94107" {...field} />
+                <Input placeholder="e.g. New York" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full md:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
-          <SearchIcon className="mr-2 h-4 w-4" /> Search Donors
+        <Button type="submit" className="md:mt-[1.375rem]">
+          Search donors
         </Button>
       </form>
     </Form>

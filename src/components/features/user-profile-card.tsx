@@ -1,60 +1,63 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { format, parseISO } from "date-fns";
+import { BloodTypeTag } from "@/components/features/blood-type-tag";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import type { User } from "@/types";
-import { Mail, MapPin, Phone, Droplet, Edit3 } from "lucide-react";
 
 interface UserProfileCardProps {
   user: User;
+  onEdit: () => void;
 }
 
-export function UserProfileCard({ user }: UserProfileCardProps) {
-  const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+export function UserProfileCard({ user, onEdit }: UserProfileCardProps) {
+  const initials = user.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
+  const details = [
+    { label: "Email", value: user.email },
+    { label: "Phone", value: user.contactNumber || "Not added" },
+    { label: "Location", value: user.location },
+  ];
 
   return (
-    <Card className="shadow-xl">
-      <CardHeader className="items-center text-center">
-        <Avatar className="w-24 h-24 mb-4 border-4 border-primary/50 shadow-md">
-          <AvatarImage src={`https://placehold.co/100x100.png?text=${initials}`} alt={user.name} data-ai-hint="profile avatar" />
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
-        <CardTitle className="text-3xl font-headline text-primary">{user.name}</CardTitle>
-        <CardDescription className="text-md">Blood Donor</CardDescription>
+    <Card>
+      <CardHeader className="flex-row items-center gap-4">
+        <div
+          className="flex size-14 shrink-0 items-center justify-center rounded-full bg-muted text-lg font-bold"
+          aria-hidden
+        >
+          {initials}
+        </div>
+        <div className="min-w-0 flex-1">
+          <CardTitle className="truncate text-xl">{user.name}</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Member since {format(parseISO(user.createdAt), "MMM yyyy")}
+          </p>
+        </div>
+        <BloodTypeTag type={user.bloodType} />
       </CardHeader>
-      <CardContent className="space-y-4 pt-2">
-        <div className="border-t border-b border-border/50 py-4">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Contact Information</h3>
-          <div className="space-y-2">
-            <div className="flex items-center">
-              <Mail size={16} className="mr-3 text-primary" />
-              <span className="text-foreground">{user.email}</span>
+      <CardContent className="space-y-4">
+        <Badge variant={user.available ? "success" : "default"}>
+          {user.available ? "Listed as available donor" : "Hidden from donor search"}
+        </Badge>
+        <dl className="divide-y border-y text-sm">
+          {details.map((item) => (
+            <div key={item.label} className="flex justify-between gap-4 py-2.5">
+              <dt className="text-muted-foreground">{item.label}</dt>
+              <dd className="truncate text-right font-medium">{item.value}</dd>
             </div>
-            {user.contactNumber && (
-              <div className="flex items-center">
-                <Phone size={16} className="mr-3 text-primary" />
-                <span className="text-foreground">{user.contactNumber}</span>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="border-b border-border/50 py-4">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Donor Details</h3>
-          <div className="space-y-2">
-            <div className="flex items-center">
-              <Droplet size={16} className="mr-3 text-red-500" />
-              <span className="text-foreground">Blood Type: <strong>{user.bloodType}</strong></span>
-            </div>
-            <div className="flex items-center">
-              <MapPin size={16} className="mr-3 text-green-500" />
-              <span className="text-foreground">Location: <strong>{user.location}</strong></span>
-            </div>
-          </div>
-        </div>
+          ))}
+        </dl>
       </CardContent>
-      <CardFooter className="flex justify-center">
-        <Button variant="outline">
-          <Edit3 size={16} className="mr-2" /> Edit Profile
+      <CardFooter>
+        <Button variant="outline" className="w-full" onClick={onEdit}>
+          Edit profile
         </Button>
       </CardFooter>
     </Card>

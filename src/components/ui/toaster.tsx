@@ -1,12 +1,9 @@
 "use client"
 
-import {
-  Toaster as SonnerToaster,
-  toast as sonnerToast
-} from "sonner"
+import { Toaster as SonnerToaster } from "sonner"
 
 export function Toaster() {
-  return <SonnerToaster />
+  return <SonnerToaster position="top-center" />
 }
 
-export const toast = sonnerToast
+export { toast } from "sonner"

@@ -1,112 +1,83 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { AlertCircle, Loader2, MapPin, Clock, Phone, Info } from 'lucide-react';
-import type { DonationCenter } from '@/types';
-import { Alert, AlertTitle, AlertDescription as AlertDesc } from '@/components/ui/alert'; // Renamed AlertDescription
+import { mapsUrl } from "@/lib/centers";
+import { useSession } from "@/lib/store";
+import type { DonationCenter } from "@/types";
 
 interface DonationCenterDetailsModalProps {
   center: DonationCenter | null;
-  isOpen: boolean;
   onClose: () => void;
 }
 
-export function DonationCenterDetailsModal({ center, isOpen, onClose }: DonationCenterDetailsModalProps) {
-  const [details, setDetails] = useState<GetDonationCenterDetailsOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (center && isOpen) {
-      const fetchDetails = async () => {
-        setIsLoading(true);
-        setError(null);
-        setDetails(null);
-        try {
-          const input: GetDonationCenterDetailsInput = {
-            name: center.name,
-            address: center.address,
-          };
-          const result = await getDonationCenterDetails(input);
-          setDetails(result);
-        } catch (err) {
-          console.error("Error fetching donation center details:", err);
-          setError("Could not load detailed information for this center. Please try again later.");
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchDetails();
-    }
-  }, [center, isOpen]);
-
-  if (!center) return null;
+export function DonationCenterDetailsModal({ center, onClose }: DonationCenterDetailsModalProps) {
+  const { user } = useSession();
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle className="font-headline text-2xl text-primary">{center.name}</DialogTitle>
-          <DialogDescription className="flex items-center pt-1">
-            <MapPin size={14} className="mr-1.5 text-muted-foreground" />
-            {center.address}, {center.city}
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={center !== null} onOpenChange={(open) => !open && onClose()}>
+      {center && (
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{center.name}</DialogTitle>
+            <DialogDescription>
+              {center.address}, {center.city} {center.postalCode}
+            </DialogDescription>
+          </DialogHeader>
 
-        {isLoading && (
-          <div className="flex items-center justify-center h-40">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="ml-3 text-muted-foreground">Fetching details...</p>
-          </div>
-        )}
-
-        {error && !isLoading && (
-          <Alert variant="destructive" className="my-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDesc>{error}</AlertDesc>
-          </Alert>
-        )}
-
-        {!isLoading && !error && details && (
-          <div className="py-4 space-y-4">
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
-                <Clock size={16} className="mr-2 text-primary" /> Operating Hours
-              </h3>
-              <p className="text-foreground">{details.openingHours || 'Not available'}</p>
+          <dl className="divide-y rounded-md border text-sm">
+            <div className="grid grid-cols-[7rem_1fr] gap-2 px-4 py-3">
+              <dt className="text-muted-foreground">Opening hours</dt>
+              <dd>{center.operatingHours}</dd>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-1 flex items-center">
-                <Phone size={16} className="mr-2 text-primary" /> Contact Information
-              </h3>
-              <p className="text-foreground">{details.contactInformation || 'Not available'}</p>
+            <div className="grid grid-cols-[7rem_1fr] gap-2 px-4 py-3">
+              <dt className="text-muted-foreground">Phone</dt>
+              <dd>
+                <a href={`tel:${center.contactInfo.replace(/[^\d+]/g, "")}`} className="text-primary hover:underline">
+                  {center.contactInfo}
+                </a>
+              </dd>
             </div>
-            {/* You can add more details here if the GenAI flow provides them */}
-          </div>
-        )}
-        
-        {!isLoading && !error && !details && (
-           <div className="flex items-center justify-center h-40 flex-col">
-            <Info size={24} className="text-muted-foreground mb-2" />
-            <p className="text-muted-foreground">No additional details found for this center.</p>
-          </div>
-        )}
+            <div className="grid grid-cols-[7rem_1fr] gap-2 px-4 py-3">
+              <dt className="text-muted-foreground">Donation types</dt>
+              <dd className="flex flex-wrap gap-1.5">
+                {center.services.map((service) => (
+                  <Badge key={service} variant="outline">
+                    {service}
+                  </Badge>
+                ))}
+              </dd>
+            </div>
+          </dl>
 
+          <p className="mt-4 text-sm text-muted-foreground">
+            Bring a photo ID, eat a healthy meal and drink plenty of water before you donate. Call ahead to
+            book a slot or confirm walk-in times.
+          </p>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
-        </DialogFooter>
-      </DialogContent>
+          <DialogFooter>
+            <Button variant="outline" asChild>
+              <a href={mapsUrl(center)} target="_blank" rel="noopener noreferrer">
+                Open in Google Maps
+              </a>
+            </Button>
+            {user && (
+              <Button asChild>
+                <Link href={`/donations/new?center=${center.id}`}>Log a donation here</Link>
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      )}
     </Dialog>
   );
 }

@@ -1,114 +1,120 @@
-// src/components/layout/header.tsx
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Droplet, Menu, X } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { logout, useSession } from '@/lib/store';
 import { cn } from '@/lib/utils';
-import React from 'react';
 
-const navItems = [
-  { href: '/', label: 'Home' },
-  { href: '/search', label: 'Find Donors' },
-  { href: '/centers', label: 'Donation Centers' },
-  { href: '/donations', label: 'My Donations' },
-  { href: '/profile', label: 'My Profile' },
+const publicNav = [
+  { href: '/search', label: 'Find donors' },
+  { href: '/centers', label: 'Donation centers' },
 ];
 
-// Mock auth status
-const useAuth = () => ({ isAuthenticated: false, user: null });
-
+const memberNav = [
+  { href: '/donations', label: 'My donations' },
+  { href: '/profile', label: 'Profile' },
+];
 
 export default function Header() {
   const pathname = usePathname();
-  const { isAuthenticated } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const router = useRouter();
+  const { ready, user } = useSession();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  const navItems = user ? [...publicNav, ...memberNav] : publicNav;
+  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+
+  const handleLogout = () => {
+    logout();
+    setMenuOpen(false);
+    router.push('/');
+  };
+
+  const authActions = !ready ? null : user ? (
+    <Button variant="outline" size="sm" onClick={handleLogout}>
+      Log out
+    </Button>
+  ) : (
+    <>
+      <Button variant="ghost" size="sm" asChild>
+        <Link href="/login">Log in</Link>
+      </Button>
+      <Button size="sm" asChild>
+        <Link href="/register">Register</Link>
+      </Button>
+    </>
+  );
 
   return (
-    <header className="bg-primary shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link href="/" className="flex items-center space-x-2 text-primary-foreground hover:opacity-90 transition-opacity">
-          <Droplet size={32} />
-          <h1 className="text-2xl font-headline font-bold">Lifeline Connect</h1>
+    <header className="sticky top-0 z-30 border-b bg-background">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+        <Link href="/" className="flex items-center gap-2.5 font-bold tracking-tight">
+          <span className="logo-mark" aria-hidden />
+          <span className="text-lg">Lifeline Connect</span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-2">
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
           {navItems.map((item) => (
-            <Button key={item.href} variant="ghost" asChild
+            <Link
+              key={item.href}
+              href={item.href}
               className={cn(
-                "text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground",
-                pathname === item.href && "bg-primary/70 font-semibold"
+                'rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground',
+                isActive(item.href) && 'text-primary'
               )}
+              aria-current={isActive(item.href) ? 'page' : undefined}
             >
-              <Link href={item.href}>{item.label}</Link>
-            </Button>
+              {item.label}
+            </Link>
           ))}
-          {isAuthenticated ? (
-            <Button variant="secondary">Logout</Button>
-          ) : (
-            <>
-              <Button variant="ghost" asChild className="text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground">
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button variant="default" asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
-                <Link href="/register">Register</Link>
-              </Button>
-            </>
-          )}
         </nav>
 
-        {/* Mobile Navigation Trigger */}
-        <div className="md:hidden">
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/80">
-                <Menu size={24} />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[280px] bg-background p-0">
-              <div className="flex flex-col h-full">
-                <div className="p-4 border-b">
-                  <Link href="/" className="flex items-center space-x-2 text-primary" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Droplet size={28} />
-                    <h1 className="text-xl font-headline font-bold">Lifeline Connect</h1>
-                  </Link>
-                </div>
-                <nav className="flex-grow p-4 space-y-2">
-                  {navItems.map((item) => (
-                    <Button
-                      key={item.href}
-                      variant={pathname === item.href ? "secondary" : "ghost"}
-                      className="w-full justify-start text-left"
-                      asChild
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <Link href={item.href}>{item.label}</Link>
-                    </Button>
-                  ))}
-                </nav>
-                <div className="p-4 border-t space-y-2">
-                {isAuthenticated ? (
-                  <Button variant="outline" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>Logout</Button>
-                ) : (
-                  <>
-                    <Button variant="outline" className="w-full" asChild onClick={() => setIsMobileMenuOpen(false)}>
-                      <Link href="/login">Login</Link>
-                    </Button>
-                    <Button variant="default" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" asChild onClick={() => setIsMobileMenuOpen(false)}>
-                      <Link href="/register">Register</Link>
-                    </Button>
-                  </>
-                )}
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+        <div className="hidden items-center gap-2 md:flex">
+          {user && <span className="max-w-40 truncate text-sm text-muted-foreground">{user.name}</span>}
+          {authActions}
         </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="md:hidden"
+          aria-expanded={menuOpen}
+          aria-controls="mobile-menu"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          {menuOpen ? 'Close' : 'Menu'}
+        </Button>
       </div>
+
+      {menuOpen && (
+        <div id="mobile-menu" className="border-t bg-background md:hidden">
+          <nav className="mx-auto flex max-w-6xl flex-col px-4 py-2" aria-label="Mobile">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className={cn(
+                  'border-b py-3 text-sm font-medium last:border-0',
+                  isActive(item.href) ? 'text-primary' : 'text-foreground'
+                )}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 border-t px-4 py-3">
+            {user && <span className="mr-auto text-sm text-muted-foreground">{user.name}</span>}
+            {authActions}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

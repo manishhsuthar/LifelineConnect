@@ -1,19 +1,26 @@
+export const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as const;
+export type BloodType = (typeof bloodTypes)[number];
+
+export const donationTypes = ['Whole Blood', 'Power Red', 'Platelets', 'Plasma'] as const;
+export type DonationType = (typeof donationTypes)[number];
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  bloodType: string;
+  bloodType: BloodType;
   location: string; // e.g., City or Zip Code
   contactNumber?: string;
-  // Add other relevant profile information
+  available: boolean; // Listed in donor search results
+  createdAt: string; // ISO timestamp
 }
 
 export interface DonationRecord {
   id: string;
   userId: string;
-  date: string; // ISO string date
+  date: string; // yyyy-MM-dd
   location: string; // Name of donation center or hospital
-  donationType: 'Whole Blood' | 'Platelets' | 'Plasma' | 'Power Red';
+  donationType: DonationType;
   notes?: string;
 }
 
@@ -23,12 +30,7 @@ export interface DonationCenter {
   address: string;
   city: string;
   postalCode: string;
-  latitude?: number; // For map integration
-  longitude?: number; // For map integration
-  operatingHours?: string; // Could be a structured object later
-  contactInfo?: string;
+  operatingHours: string;
+  contactInfo: string;
+  services: DonationType[];
 }
-
-export type BloodType = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
-
-export const bloodTypes: BloodType[] = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
